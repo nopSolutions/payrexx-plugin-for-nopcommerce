@@ -1,0 +1,65 @@
+﻿@model ConfigurationModel;
+
+@using Nop.Services
+@using Nop.Plugin.Payments.Payrexx
+@using Nop.Plugin.Payments.Payrexx.Domain
+@using Nop.Plugin.Payments.Payrexx.Models
+@inject Nop.Core.IWebHelper webHelper
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<form asp-controller="Payrexx" asp-action="Configure" method="post">
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <p>
+                    For plugin configuration follow these steps:<br />
+                    <br />
+                    1. Create a Payrexx instance on Payrexx.com: <a href="https://www.payrexx.com/?ref=nopcommerce" target="_blank">Click here to create now</a><br />
+                    2. After you login for the first time you will see the initial steps you need to complete to use your account<br />
+                    3. Find your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example<br />
+                    4. Find your API secret on the 'API & Webhook' page<br />
+                    5. Add new webhook with the following parameters: Webhook URL - @(Url.RouteUrl(PayrexxDefaults.WebhookRouteName, null, webHelper.CurrentRequestProtocol)), Webhook Content-Type - JSON on the 'API & Webhook' page<br />
+                    6. Fill in your credentials below<br />
+                    7. Save<br />
+                    <br />
+                    <em>Note: Ensure that you have configured your primary store currency that is supported by selected payment service provider.</em><br />
+                </p>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-label asp-for="InstanceName" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="InstanceName" />
+                        <span asp-validation-for="InstanceName"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-label asp-for="SecretKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="SecretKey" />
+                        <span asp-validation-for="SecretKey"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-label asp-for="PaymentTransactionTypeId" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-select asp-for="PaymentTransactionTypeId" asp-items="@(TransactionType.Authorization.ToSelectList(false))"/>
+                        <span asp-validation-for="PaymentTransactionTypeId"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-9 col-md-offset-3">
+                        <input type="submit" name="save" class="btn btn-primary" value="@T("Admin.Common.Save")" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
