@@ -13,8 +13,5 @@ namespace Nop.Plugin.Payments.Payrexx.Models
 
         [NopResourceDisplayName("Plugins.Payments.Payrexx.Fields.SecretKey")]
         public string SecretKey { get; set; }
-
-        [NopResourceDisplayName("Plugins.Payments.Payrexx.Fields.PaymentTransactionType")]
-        public int PaymentTransactionTypeId { get; set; }
     }
 }

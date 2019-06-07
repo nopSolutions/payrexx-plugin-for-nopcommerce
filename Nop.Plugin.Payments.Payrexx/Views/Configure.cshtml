@@ -1,8 +1,6 @@
 ﻿@model ConfigurationModel;
 
-@using Nop.Services
 @using Nop.Plugin.Payments.Payrexx
-@using Nop.Plugin.Payments.Payrexx.Domain
 @using Nop.Plugin.Payments.Payrexx.Models
 @inject Nop.Core.IWebHelper webHelper
 
@@ -21,7 +19,7 @@
                     2. After you login for the first time you will see the initial steps you need to complete to use your account<br />
                     3. Find your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example<br />
                     4. Find your API secret on the 'API & Webhook' page<br />
-                    5. Add new webhook with the following parameters: Webhook URL - @(Url.RouteUrl(PayrexxDefaults.WebhookRouteName, null, webHelper.CurrentRequestProtocol)), Webhook Content-Type - JSON on the 'API & Webhook' page<br />
+                    5. Add new webhook with the following parameters: Webhook URL - <em>"@(Url.RouteUrl(PayrexxDefaults.WebhookRouteName, null, webHelper.CurrentRequestProtocol))"</em>, Webhook Content-Type - JSON on the 'API & Webhook' page<br />
                     6. Fill in your credentials below<br />
                     7. Save<br />
                     <br />
@@ -43,15 +41,6 @@
                     <div class="col-md-9">
                         <nop-editor asp-for="SecretKey" />
                         <span asp-validation-for="SecretKey"></span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-md-3">
-                        <nop-label asp-for="PaymentTransactionTypeId" />
-                    </div>
-                    <div class="col-md-9">
-                        <nop-select asp-for="PaymentTransactionTypeId" asp-items="@(TransactionType.Authorization.ToSelectList(false))"/>
-                        <span asp-validation-for="PaymentTransactionTypeId"></span>
                     </div>
                 </div>
                 <div class="form-group">

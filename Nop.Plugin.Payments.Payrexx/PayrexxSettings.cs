@@ -16,10 +16,5 @@ namespace Nop.Plugin.Payments.Payrexx
         /// Gets or sets API secret key
         /// </summary>
         public string SecretKey { get; set; }
-
-        /// <summary>
-        /// Gets or sets an identifier of the payment transaction type (authorization only or authorization and capture in a single request)
-        /// </summary>
-        public int PaymentTransactionTypeId { get; set; }
     }
 }

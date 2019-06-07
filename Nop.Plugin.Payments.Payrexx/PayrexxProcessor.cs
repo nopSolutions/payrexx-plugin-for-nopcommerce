@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Domain.Payments;
 using Nop.Core.Plugins;
 using Nop.Plugin.Payments.Payrexx.Domain;
 using Nop.Plugin.Payments.Payrexx.Services;
@@ -131,8 +130,8 @@ namespace Nop.Plugin.Payments.Payrexx
                 FailedRedirectUrl = failUrl,
                 PaymentServiceProviders = null, //pass null to enable all available providers
                 PaymentMethods = null, //pass null to enable all payment methods
-                Authorized = _payrexxSettings.PaymentTransactionTypeId == (int)TransactionType.Authorization,
-                Reserved = false, //only authorization and sale are available
+                Authorized = false,
+                Reserved = false,
                 ReferenceId = postProcessPaymentRequest.Order.CustomOrderNumber,
                 SkipResultPage = true,
                 AdditionalFields = new List<(string Name, string Value)>
@@ -171,20 +170,7 @@ namespace Nop.Plugin.Payments.Payrexx
         /// <returns>Capture payment result</returns>
         public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
         {
-            //capture full amount of the authorized transaction
-            var orderTotal = (int)(Math.Round(capturePaymentRequest.Order.OrderTotal, 2) * 100);
-            var (transaction, errorMessage) = _payrexxManager
-                .CaptureTransaction(capturePaymentRequest.Order.AuthorizationTransactionId, orderTotal);
-
-            if (!string.IsNullOrEmpty(errorMessage))
-                return new CapturePaymentResult { Errors = new[] { errorMessage } };
-
-            //request succeeded
-            return new CapturePaymentResult
-            {
-                CaptureTransactionId = transaction.Invoice?.Id,
-                NewPaymentStatus = PaymentStatus.Paid
-            };
+            return new CapturePaymentResult { Errors = new[] { "Capture method not supported" } };
         }
 
         /// <summary>
@@ -300,18 +286,11 @@ namespace Nop.Plugin.Payments.Payrexx
         public override void Install()
         {
             //settings
-            _settingService.SaveSetting(new PayrexxSettings
-            {
-                PaymentTransactionTypeId = (int)TransactionType.Sale
-            });
+            _settingService.SaveSetting(new PayrexxSettings());
 
             //locales
-            _localizationService.AddOrUpdatePluginLocaleResource("Enums.Nop.Plugin.Payments.Payrexx.Domain.Authorization", "Authorization");
-            _localizationService.AddOrUpdatePluginLocaleResource("Enums.Nop.Plugin.Payments.Payrexx.Domain.Sale", "Sale (authorization and capture)");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.InstanceName", "Instance name");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.InstanceName.Hint", "Enter your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example.");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.PaymentTransactionType", "Transaction type");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.PaymentTransactionType.Hint", "Choose payment transaction type.");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.SecretKey", "API secret key");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.SecretKey.Hint", "Enter your Payrexx API secret key.");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.PaymentMethodDescription", "You will be redirected to Payrexx site to complete the payment");
@@ -328,12 +307,8 @@ namespace Nop.Plugin.Payments.Payrexx
             _settingService.DeleteSetting<PayrexxSettings>();
 
             //locales
-            _localizationService.DeletePluginLocaleResource("Enums.Nop.Plugin.Payments.Payrexx.Domain.Authorization");
-            _localizationService.DeletePluginLocaleResource("Enums.Nop.Plugin.Payments.Payrexx.Domain.Sale");
             _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.InstanceName");
             _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.InstanceName.Hint");
-            _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.PaymentTransactionType");
-            _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.PaymentTransactionType.Hint");
             _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.SecretKey");
             _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.SecretKey.Hint");
             _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.PaymentMethodDescription");
@@ -348,7 +323,7 @@ namespace Nop.Plugin.Payments.Payrexx
         /// <summary>
         /// Gets a value indicating whether capture is supported
         /// </summary>
-        public bool SupportCapture => true;
+        public bool SupportCapture => false;
 
         /// <summary>
         /// Gets a value indicating whether partial refund is supported

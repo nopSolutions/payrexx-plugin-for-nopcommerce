@@ -1,10 +1,6 @@
-﻿using System.Linq;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Nop.Plugin.Payments.Payrexx.Domain;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Plugin.Payments.Payrexx.Models;
 using Nop.Plugin.Payments.Payrexx.Services;
-using Nop.Services;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Security;
@@ -52,10 +48,9 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
             var model = new ConfigurationModel
             {
                 InstanceName = _payrexxSettings.InstanceName,
-                SecretKey = _payrexxSettings.SecretKey,
-                PaymentTransactionTypeId = _payrexxSettings.PaymentTransactionTypeId
+                SecretKey = _payrexxSettings.SecretKey
             };
-            
+
             return View("~/Plugins/Payments.Payrexx/Views/Configure.cshtml", model);
         }
 
@@ -70,7 +65,6 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
 
             _payrexxSettings.InstanceName = model.InstanceName;
             _payrexxSettings.SecretKey = model.SecretKey;
-            _payrexxSettings.PaymentTransactionTypeId = model.PaymentTransactionTypeId;
             _settingService.SaveSetting(_payrexxSettings);
 
             SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
