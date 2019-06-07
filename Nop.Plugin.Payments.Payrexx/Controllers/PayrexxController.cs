@@ -3,6 +3,7 @@ using Nop.Plugin.Payments.Payrexx.Models;
 using Nop.Plugin.Payments.Payrexx.Services;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
+using Nop.Services.Messages;
 using Nop.Services.Security;
 using Nop.Web.Areas.Admin.Controllers;
 
@@ -13,6 +14,7 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
         #region Fields
 
         private readonly ILocalizationService _localizationService;
+        private readonly INotificationService _notificationService;
         private readonly IPermissionService _permissionService;
         private readonly ISettingService _settingService;
         private readonly PayrexxManager _payrexxManager;
@@ -23,12 +25,14 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
         #region Ctor
 
         public PayrexxController(ILocalizationService localizationService,
+            INotificationService notificationService,
             IPermissionService permissionService,
             ISettingService settingService,
             PayrexxManager payrexxManager,
             PayrexxSettings payrexxSettings)
         {
             _localizationService = localizationService;
+            _notificationService = notificationService;
             _permissionService = permissionService;
             _settingService = settingService;
             _payrexxManager = payrexxManager;
@@ -67,16 +71,16 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
             _payrexxSettings.SecretKey = model.SecretKey;
             _settingService.SaveSetting(_payrexxSettings);
 
-            SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
+            _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
 
             //validate credentials
             var (credentialsValid, error) = _payrexxManager.CheckSignature();
             if (credentialsValid)
-                SuccessNotification("Credentials entered are valid");
+                _notificationService.SuccessNotification("Credentials entered are valid");
             else if (string.IsNullOrEmpty(error))
-                WarningNotification("Credentials entered are invalid");
+                _notificationService.WarningNotification("Credentials entered are invalid");
             else
-                ErrorNotification(error);
+                _notificationService.ErrorNotification(error);
 
             return Configure();
         }

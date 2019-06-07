@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Plugins;
 using Nop.Plugin.Payments.Payrexx.Domain;
 using Nop.Plugin.Payments.Payrexx.Services;
 using Nop.Services.Common;
@@ -15,6 +14,7 @@ using Nop.Services.Configuration;
 using Nop.Services.Directory;
 using Nop.Services.Localization;
 using Nop.Services.Payments;
+using Nop.Services.Plugins;
 
 namespace Nop.Plugin.Payments.Payrexx
 {
