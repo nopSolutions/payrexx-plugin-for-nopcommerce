@@ -19,7 +19,6 @@ namespace Nop.Plugin.Payments.Payrexx.Infrastructure
         /// <param name="config">Config</param>
         public virtual void Register(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
         {
-            //register service manager
             builder.RegisterType<PayrexxManager>().AsSelf().InstancePerLifetimeScope();
         }
 

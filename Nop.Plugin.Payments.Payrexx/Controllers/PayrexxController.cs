@@ -5,11 +5,18 @@ using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Security;
-using Nop.Web.Areas.Admin.Controllers;
+using Nop.Web.Framework;
+using Nop.Web.Framework.Controllers;
+using Nop.Web.Framework.Mvc.Filters;
 
 namespace Nop.Plugin.Payments.Payrexx.Controllers
 {
-    public class PayrexxController : BaseAdminController
+    [Area(AreaNames.Admin)]
+    [HttpsRequirement]
+    [AutoValidateAntiforgeryToken]
+    [ValidateIpAddress]
+    [AuthorizeAdmin]
+    public class PayrexxController : BasePaymentController
     {
         #region Fields
 
@@ -48,7 +55,6 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
             if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
                 return AccessDeniedView();
 
-            //prepare model
             var model = new ConfigurationModel
             {
                 InstanceName = _payrexxSettings.InstanceName,

@@ -1,8 +1,4 @@
-﻿@model ConfigurationModel;
-
-@using Nop.Plugin.Payments.Payrexx
-@using Nop.Plugin.Payments.Payrexx.Models
-@inject Nop.Core.IWebHelper webHelper
+﻿@model ConfigurationModel
 
 @{
     Layout = "_ConfigurePlugin";
@@ -15,13 +11,13 @@
                 <p>
                     For plugin configuration follow these steps:<br />
                     <br />
-                    1. Create a Payrexx instance on Payrexx.com: <a href="https://www.payrexx.com/?ref=nopcommerce" target="_blank">Click here to create now</a><br />
-                    2. After you login for the first time you will see the initial steps you need to complete to use your account<br />
-                    3. Find your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example<br />
-                    4. Find your API secret on the 'API & Webhook' page<br />
-                    5. Add new webhook with the following parameters: Webhook URL - <em>"@(Url.RouteUrl(PayrexxDefaults.WebhookRouteName, null, webHelper.CurrentRequestProtocol))"</em>, Webhook Content-Type - JSON on the 'API & Webhook' page<br />
-                    6. Fill in your credentials below<br />
-                    7. Save<br />
+                    1. Create a Payrexx instance on Payrexx.com: <a href="https://www.payrexx.com/?ref=nopcommerce" target="_blank">Click here to create now.</a><br />
+                    2. After you login for the first time you will see the initial steps you need to complete to use your account.<br />
+                    3. Find your Payrexx instance name. If you access your Payrexx payment page with <b>example</b>.payrexx.com, the name would be <b>example</b>.<br />
+                    4. Find your API secret on the <b>API & Integrations</b> page.<br />
+                    5. Add new webhook on the <b>Webhooks</b> page with the following parameters: Webhook URL - <em>"@(Url.RouteUrl(PayrexxDefaults.WebhookRouteName, null, webHelper.CurrentRequestProtocol))"</em>, Webhook Content-Type - <em>JSON</em>.<br />
+                    6. Fill in your credentials below.<br />
+                    7. Save the configuration.<br />
                     <br />
                     <em>Note: Ensure that you have configured your primary store currency that is supported by selected payment service provider.</em><br />
                 </p>

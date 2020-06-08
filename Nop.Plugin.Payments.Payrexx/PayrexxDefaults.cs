@@ -8,37 +8,42 @@ namespace Nop.Plugin.Payments.Payrexx
     public class PayrexxDefaults
     {
         /// <summary>
-        /// Payrexx payment method system name
+        /// Gets the plugin system name
         /// </summary>
         public static string SystemName => "Payments.Payrexx";
 
         /// <summary>
-        /// User agent used to request Payrexx services
+        /// Gets the user agent used to request third-party services
         /// </summary>
         public static string UserAgent => $"nopCommerce-{NopVersion.CurrentVersion}";
 
         /// <summary>
-        /// Payrexx API service URL
+        /// Gets the API service URL
         /// </summary>
         public static string ApiServiceUrl => "https://api.payrexx.com/v1.0/";
 
         /// <summary>
-        /// Parameter name of a request signature
+        /// Gets the parameter name of a request signature
         /// </summary>
         public static string RequestSignatureParameter => "ApiSignature";
 
         /// <summary>
-        /// Parameter name of a request instance
+        /// Gets the parameter name of a request instance
         /// </summary>
         public static string RequestInstanceParameter => "instance";
 
         /// <summary>
-        /// Webhook route name
+        /// Gets the configuration route name
+        /// </summary>
+        public static string ConfigurationRouteName => "Plugin.Payments.Payrexx.Configure";
+
+        /// <summary>
+        /// Gets the webhook route name
         /// </summary>
         public static string WebhookRouteName => "Plugin.Payments.Payrexx.Webhook";
 
         /// <summary>
-        /// Generic attribute to store invoice identifier
+        /// Gets the name of a generic attribute to store invoice identifier
         /// </summary>
         public static string InvoiceIdAttribute => "PayrexxInvoiceId";
     }

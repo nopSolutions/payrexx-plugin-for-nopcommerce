@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
+using Nop.Web.Framework;
 using Nop.Web.Framework.Mvc.Routing;
 
 namespace Nop.Plugin.Payments.Payrexx.Infrastructure
@@ -12,11 +13,13 @@ namespace Nop.Plugin.Payments.Payrexx.Infrastructure
         /// <summary>
         /// Register routes
         /// </summary>
-        /// <param name="routeBuilder">Route builder</param>
-        public void RegisterRoutes(IRouteBuilder routeBuilder)
+        /// <param name="endpointRouteBuilder">Route builder</param>
+        public void RegisterRoutes(IEndpointRouteBuilder endpointRouteBuilder)
         {
-            //add route to the webhook handler
-            routeBuilder.MapRoute(PayrexxDefaults.WebhookRouteName, "Plugins/Payrexx/Webhook/",
+            endpointRouteBuilder.MapControllerRoute(PayrexxDefaults.ConfigurationRouteName, "Plugins/Payrexx/Configure",
+                new { controller = "Payrexx", action = "Configure", area = AreaNames.Admin });
+
+            endpointRouteBuilder.MapControllerRoute(PayrexxDefaults.WebhookRouteName, "Plugins/Payrexx/Webhook",
                 new { controller = "PayrexxWebhook", action = "WebhookHandler" });
         }
 

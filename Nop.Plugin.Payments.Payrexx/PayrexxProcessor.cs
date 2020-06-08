@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -27,6 +28,8 @@ namespace Nop.Plugin.Payments.Payrexx
 
         private readonly CurrencySettings _currencySettings;
         private readonly IActionContextAccessor _actionContextAccessor;
+        private readonly IAddressService _addressService;
+        private readonly ICountryService _countryService;
         private readonly ICurrencyService _currencyService;
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly ILocalizationService _localizationService;
@@ -35,7 +38,6 @@ namespace Nop.Plugin.Payments.Payrexx
         private readonly IUrlHelperFactory _urlHelperFactory;
         private readonly IWebHelper _webHelper;
         private readonly PayrexxManager _payrexxManager;
-        private readonly PayrexxSettings _payrexxSettings;
 
         #endregion
 
@@ -43,6 +45,8 @@ namespace Nop.Plugin.Payments.Payrexx
 
         public PayrexxProcessor(CurrencySettings currencySettings,
             IActionContextAccessor actionContextAccessor,
+            IAddressService addressService,
+            ICountryService countryService,
             ICurrencyService currencyService,
             IGenericAttributeService genericAttributeService,
             ILocalizationService localizationService,
@@ -50,11 +54,12 @@ namespace Nop.Plugin.Payments.Payrexx
             IStoreContext storeContext,
             IUrlHelperFactory urlHelperFactory,
             IWebHelper webHelper,
-            PayrexxManager payrexxManager,
-            PayrexxSettings payrexxSettings)
+            PayrexxManager payrexxManager)
         {
             _currencySettings = currencySettings;
             _actionContextAccessor = actionContextAccessor;
+            _addressService = addressService;
+            _countryService = countryService;
             _currencyService = currencyService;
             _genericAttributeService = genericAttributeService;
             _localizationService = localizationService;
@@ -63,7 +68,6 @@ namespace Nop.Plugin.Payments.Payrexx
             _urlHelperFactory = urlHelperFactory;
             _webHelper = webHelper;
             _payrexxManager = payrexxManager;
-            _payrexxSettings = payrexxSettings;
         }
 
         #endregion
@@ -99,7 +103,7 @@ namespace Nop.Plugin.Payments.Payrexx
             if (!string.IsNullOrEmpty(invoiceId))
             {
                 //whether payment link is already created and invoice is pending
-                var (invoice, error) = _payrexxManager.GetGateway(invoiceId);
+                var (invoice, _) = _payrexxManager.GetGateway(invoiceId);
                 if (invoice != null)
                 {
                     if (invoice.PaymentLink != null && invoice.Status == InvoiceStatus.Pending)
@@ -118,6 +122,9 @@ namespace Nop.Plugin.Payments.Payrexx
             var orderTotal = (int)(Math.Round(postProcessPaymentRequest.Order.OrderTotal, 2) * 100);
             var currencyCode = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId)?.CurrencyCode;
 
+            var billingAddress = _addressService.GetAddressById(postProcessPaymentRequest.Order.BillingAddressId);
+            var country = _countryService.GetCountryById(billingAddress?.CountryId ?? 0);
+
             //prepare request to create gateway
             var request = new CreateGatewayRequest
             {
@@ -134,16 +141,16 @@ namespace Nop.Plugin.Payments.Payrexx
                 Reserved = false,
                 ReferenceId = postProcessPaymentRequest.Order.CustomOrderNumber,
                 SkipResultPage = true,
-                AdditionalFields = new List<(string Name, string Value)>
+                AdditionalFields = billingAddress == null ? null : new List<(string Name, string Value)>
                 {
-                    { ("forename", postProcessPaymentRequest.Order.BillingAddress?.FirstName) },
-                    { ("surname", postProcessPaymentRequest.Order.BillingAddress?.LastName) },
-                    { ("phone", postProcessPaymentRequest.Order.BillingAddress?.PhoneNumber) },
-                    { ("email", postProcessPaymentRequest.Order.BillingAddress?.Email) },
-                    { ("street", postProcessPaymentRequest.Order.BillingAddress?.Address1) },
-                    { ("place", postProcessPaymentRequest.Order.BillingAddress?.City) },
-                    { ("country", postProcessPaymentRequest.Order.BillingAddress?.Country?.TwoLetterIsoCode) },
-                    { ("postcode", postProcessPaymentRequest.Order.BillingAddress?.ZipPostalCode) }
+                    { ("forename", billingAddress.FirstName) },
+                    { ("surname", billingAddress.LastName) },
+                    { ("phone", new string(billingAddress.PhoneNumber?.Where(c => char.IsDigit(c)).ToArray())) },
+                    { ("email", billingAddress.Email) },
+                    { ("street", billingAddress.Address1) },
+                    { ("place", billingAddress.City) },
+                    { ("country", country?.TwoLetterIsoCode) },
+                    { ("postcode", billingAddress.ZipPostalCode) }
                 }
             };
 
@@ -156,8 +163,7 @@ namespace Nop.Plugin.Payments.Payrexx
             }
 
             //save invoice id for the further validation
-            _genericAttributeService
-                .SaveAttribute(postProcessPaymentRequest.Order, PayrexxDefaults.InvoiceIdAttribute, gateway.Id);
+            _genericAttributeService.SaveAttribute(postProcessPaymentRequest.Order, PayrexxDefaults.InvoiceIdAttribute, gateway.Id);
 
             //redirect to payment link
             _actionContextAccessor.ActionContext.HttpContext.Response.Redirect(gateway.PaymentLink);
@@ -268,7 +274,7 @@ namespace Nop.Plugin.Payments.Payrexx
         /// </summary>
         public override string GetConfigurationPageUrl()
         {
-            return $"{_webHelper.GetStoreLocation()}Admin/Payrexx/Configure";
+            return _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext).RouteUrl(PayrexxDefaults.ConfigurationRouteName);
         }
 
         /// <summary>
@@ -289,11 +295,14 @@ namespace Nop.Plugin.Payments.Payrexx
             _settingService.SaveSetting(new PayrexxSettings());
 
             //locales
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.InstanceName", "Instance name");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.InstanceName.Hint", "Enter your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example.");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.SecretKey", "API secret key");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.Fields.SecretKey.Hint", "Enter your Payrexx API secret key.");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Payments.Payrexx.PaymentMethodDescription", "You will be redirected to Payrexx site to complete the payment");
+            _localizationService.AddPluginLocaleResource(new Dictionary<string, string>
+            {
+                ["Plugins.Payments.Payrexx.Fields.InstanceName"] = "Instance name",
+                ["Plugins.Payments.Payrexx.Fields.InstanceName.Hint"] = "Enter your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example.",
+                ["Plugins.Payments.Payrexx.Fields.SecretKey"] = "API secret key",
+                ["Plugins.Payments.Payrexx.Fields.SecretKey.Hint"] = "Enter your Payrexx API secret key.",
+                ["Plugins.Payments.Payrexx.PaymentMethodDescription"] = "You will be redirected to Payrexx site to complete the payment"
+            });
 
             base.Install();
         }
@@ -307,11 +316,7 @@ namespace Nop.Plugin.Payments.Payrexx
             _settingService.DeleteSetting<PayrexxSettings>();
 
             //locales
-            _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.InstanceName");
-            _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.InstanceName.Hint");
-            _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.SecretKey");
-            _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.Fields.SecretKey.Hint");
-            _localizationService.DeletePluginLocaleResource("Plugins.Payments.Payrexx.PaymentMethodDescription");
+            _localizationService.DeletePluginLocaleResources("Plugins.Payments.Payrexx");
 
             base.Uninstall();
         }

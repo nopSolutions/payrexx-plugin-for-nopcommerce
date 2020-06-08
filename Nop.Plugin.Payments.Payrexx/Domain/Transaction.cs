@@ -66,11 +66,11 @@ namespace Nop.Plugin.Payments.Payrexx.Domain
         [JsonProperty(PropertyName = "payment")]
         public object PaymentMethodNames { get; set; }
 
-        /// <summary>
-        /// Gets or sets the metadata details
-        /// </summary>
-        [JsonProperty(PropertyName = "metadata")]
-        public List<Metadata> Metadata { get; set; }
+        ///// <summary>
+        ///// Gets or sets the metadata details
+        ///// </summary>
+        //[JsonProperty(PropertyName = "metadata")]
+        //public List<Metadata> Metadata { get; set; }
 
         /// <summary>
         /// Gets or sets the subscription details
