@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -78,32 +79,37 @@ namespace Nop.Plugin.Payments.Payrexx
         /// Process a payment
         /// </summary>
         /// <param name="processPaymentRequest">Payment info required for an order processing</param>
-        /// <returns>Process payment result</returns>
-        public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the process payment result
+        /// </returns>
+        public Task<ProcessPaymentResult> ProcessPaymentAsync(ProcessPaymentRequest processPaymentRequest)
         {
-            return new ProcessPaymentResult();
+            return Task.FromResult(new ProcessPaymentResult());
         }
 
         /// <summary>
         /// Post process payment (used by payment gateways that require redirecting to a third-party URL)
         /// </summary>
         /// <param name="postProcessPaymentRequest">Payment info required for an order processing</param>
-        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
+        /// <returns>A task that represents the asynchronous operation</returns>
+        public async Task PostProcessPaymentAsync(PostProcessPaymentRequest postProcessPaymentRequest)
         {
             //prepare URLs
             var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
             var successUrl = urlHelper
-                .RouteUrl("CheckoutCompleted", new { orderId = postProcessPaymentRequest.Order.Id }, _webHelper.CurrentRequestProtocol);
+                .RouteUrl("CheckoutCompleted", new { orderId = postProcessPaymentRequest.Order.Id }, _webHelper.GetCurrentRequestProtocol());
             var failUrl = urlHelper
-                .RouteUrl("OrderDetails", new { orderId = postProcessPaymentRequest.Order.Id }, _webHelper.CurrentRequestProtocol);
+                .RouteUrl("OrderDetails", new { orderId = postProcessPaymentRequest.Order.Id }, _webHelper.GetCurrentRequestProtocol());
 
             //try to get previosly created invoice for this order
-            var invoiceId = _genericAttributeService
-                .GetAttribute<string>(postProcessPaymentRequest.Order, PayrexxDefaults.InvoiceIdAttribute) ?? string.Empty;
+            var invoiceId = await _genericAttributeService
+                .GetAttributeAsync<string>(postProcessPaymentRequest.Order, PayrexxDefaults.InvoiceIdAttribute)
+                ?? string.Empty;
             if (!string.IsNullOrEmpty(invoiceId))
             {
                 //whether payment link is already created and invoice is pending
-                var (invoice, _) = _payrexxManager.GetGateway(invoiceId);
+                var (invoice, _) = await _payrexxManager.GetGatewayAsync(invoiceId);
                 if (invoice != null)
                 {
                     if (invoice.PaymentLink != null && invoice.Status == InvoiceStatus.Pending)
@@ -120,19 +126,20 @@ namespace Nop.Plugin.Payments.Payrexx
             //the amount of money, in the smallest denomination of the currency indicated by currency, for example, when currency is USD, amount is in cents
             //most currencies consist of 100 units of smaller denomination, so we multiply the total by 100
             var orderTotal = (int)(Math.Round(postProcessPaymentRequest.Order.OrderTotal, 2) * 100);
-            var currencyCode = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId)?.CurrencyCode;
+            var currency = await _currencyService.GetCurrencyByIdAsync(_currencySettings.PrimaryStoreCurrencyId);
 
-            var billingAddress = _addressService.GetAddressById(postProcessPaymentRequest.Order.BillingAddressId);
-            var country = _countryService.GetCountryById(billingAddress?.CountryId ?? 0);
+            var store = await _storeContext.GetCurrentStoreAsync();
+            var billingAddress = await _addressService.GetAddressByIdAsync(postProcessPaymentRequest.Order.BillingAddressId);
+            var country = await _countryService.GetCountryByIdAsync(billingAddress?.CountryId ?? 0);
 
             //prepare request to create gateway
             var request = new CreateGatewayRequest
             {
                 TotalAmount = orderTotal,
                 VatRate = null, //unknown
-                CurrencyCode = currencyCode,
+                CurrencyCode = currency?.CurrencyCode,
                 Sku = null, //there may be several different items in the order
-                Purpose = $"{_storeContext.CurrentStore.Name}. Order #{postProcessPaymentRequest.Order.CustomOrderNumber}",
+                Purpose = $"{store.Name}. Order #{postProcessPaymentRequest.Order.CustomOrderNumber}",
                 SuccessRedirectUrl = successUrl,
                 FailedRedirectUrl = failUrl,
                 PaymentServiceProviders = null, //pass null to enable all available providers
@@ -155,7 +162,7 @@ namespace Nop.Plugin.Payments.Payrexx
             };
 
             //create gateway
-            var (gateway, errorMessage) = _payrexxManager.CreateGateway(request);
+            var (gateway, errorMessage) = await _payrexxManager.CreateGatewayAsync(request);
             if (gateway?.PaymentLink == null || !string.IsNullOrEmpty(errorMessage))
             {
                 _actionContextAccessor.ActionContext.HttpContext.Response.Redirect(failUrl);
@@ -163,7 +170,7 @@ namespace Nop.Plugin.Payments.Payrexx
             }
 
             //save invoice id for the further validation
-            _genericAttributeService.SaveAttribute(postProcessPaymentRequest.Order, PayrexxDefaults.InvoiceIdAttribute, gateway.Id);
+            await _genericAttributeService.SaveAttributeAsync(postProcessPaymentRequest.Order, PayrexxDefaults.InvoiceIdAttribute, gateway.Id);
 
             //redirect to payment link
             _actionContextAccessor.ActionContext.HttpContext.Response.Redirect(gateway.PaymentLink);
@@ -173,100 +180,133 @@ namespace Nop.Plugin.Payments.Payrexx
         /// Captures payment
         /// </summary>
         /// <param name="capturePaymentRequest">Capture payment request</param>
-        /// <returns>Capture payment result</returns>
-        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the capture payment result
+        /// </returns>
+        public Task<CapturePaymentResult> CaptureAsync(CapturePaymentRequest capturePaymentRequest)
         {
-            return new CapturePaymentResult { Errors = new[] { "Capture method not supported" } };
+            return Task.FromResult(new CapturePaymentResult { Errors = new[] { "Capture method not supported" } });
         }
 
         /// <summary>
         /// Refunds a payment
         /// </summary>
         /// <param name="refundPaymentRequest">Request</param>
-        /// <returns>Result</returns>
-        public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the result
+        /// </returns>
+        public Task<RefundPaymentResult> RefundAsync(RefundPaymentRequest refundPaymentRequest)
         {
-            return new RefundPaymentResult { Errors = new[] { "Refund method not supported" } };
+            return Task.FromResult(new RefundPaymentResult { Errors = new[] { "Refund method not supported" } });
         }
 
         /// <summary>
         /// Voids a payment
         /// </summary>
         /// <param name="voidPaymentRequest">Request</param>
-        /// <returns>Result</returns>
-        public VoidPaymentResult Void(VoidPaymentRequest voidPaymentRequest)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the result
+        /// </returns>
+        public Task<VoidPaymentResult> VoidAsync(VoidPaymentRequest voidPaymentRequest)
         {
-            return new VoidPaymentResult { Errors = new[] { "Void method not supported" } };
+            return Task.FromResult(new VoidPaymentResult { Errors = new[] { "Void method not supported" } });
         }
 
         /// <summary>
         /// Process recurring payment
         /// </summary>
         /// <param name="processPaymentRequest">Payment info required for an order processing</param>
-        /// <returns>Process payment result</returns>
-        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the process payment result
+        /// </returns>
+        public Task<ProcessPaymentResult> ProcessRecurringPaymentAsync(ProcessPaymentRequest processPaymentRequest)
         {
-            return new ProcessPaymentResult { Errors = new[] { "Recurring payment not supported" } };
+            return Task.FromResult(new ProcessPaymentResult { Errors = new[] { "Recurring payment not supported" } });
         }
 
         /// <summary>
         /// Cancels a recurring payment
         /// </summary>
         /// <param name="cancelPaymentRequest">Request</param>
-        /// <returns>Result</returns>
-        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the result
+        /// </returns>
+        public Task<CancelRecurringPaymentResult> CancelRecurringPaymentAsync(CancelRecurringPaymentRequest cancelPaymentRequest)
         {
-            return new CancelRecurringPaymentResult { Errors = new[] { "Recurring payment not supported" } };
+            return Task.FromResult(new CancelRecurringPaymentResult { Errors = new[] { "Recurring payment not supported" } });
         }
 
         /// <summary>
         /// Returns a value indicating whether payment method should be hidden during checkout
         /// </summary>
-        /// <param name="cart">Shoping cart</param>
-        /// <returns>true - hide; false - display.</returns>
-        public bool HidePaymentMethod(IList<ShoppingCartItem> cart)
+        /// <param name="cart">Shopping cart</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the rue - hide; false - display.
+        /// </returns>
+        public Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
         {
-            return false;
+            return Task.FromResult(false);
         }
 
         /// <summary>
         /// Gets additional handling fee
         /// </summary>
-        /// <param name="cart">Shoping cart</param>
-        /// <returns>Additional handling fee</returns>
-        public decimal GetAdditionalHandlingFee(IList<ShoppingCartItem> cart)
+        /// <param name="cart">Shopping cart</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the additional handling fee
+        /// </returns>
+        public Task<decimal> GetAdditionalHandlingFeeAsync(IList<ShoppingCartItem> cart)
         {
-            return decimal.Zero;
+            return Task.FromResult(decimal.Zero);
         }
 
         /// <summary>
         /// Gets a value indicating whether customers can complete a payment after order is placed but not completed (for redirection payment methods)
         /// </summary>
         /// <param name="order">Order</param>
-        /// <returns>Result</returns>
-        public bool CanRePostProcessPayment(Order order)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the result
+        /// </returns>
+        public Task<bool> CanRePostProcessPaymentAsync(Order order)
         {
-            return true;
+            if (order == null)
+                throw new ArgumentNullException(nameof(order));
+
+            return Task.FromResult(true);
         }
 
         /// <summary>
         /// Validate payment form
         /// </summary>
         /// <param name="form">The parsed form values</param>
-        /// <returns>List of validating errors</returns>
-        public IList<string> ValidatePaymentForm(IFormCollection form)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the list of validating errors
+        /// </returns>
+        public Task<IList<string>> ValidatePaymentFormAsync(IFormCollection form)
         {
-            return new List<string>();
+            return Task.FromResult<IList<string>>(new List<string>());
         }
 
         /// <summary>
         /// Get payment information
         /// </summary>
         /// <param name="form">The parsed form values</param>
-        /// <returns>Payment info holder</returns>
-        public ProcessPaymentRequest GetPaymentInfo(IFormCollection form)
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the payment info holder
+        /// </returns>
+        public Task<ProcessPaymentRequest> GetPaymentInfoAsync(IFormCollection form)
         {
-            return new ProcessPaymentRequest();
+            return Task.FromResult(new ProcessPaymentRequest());
         }
 
         /// <summary>
@@ -278,9 +318,9 @@ namespace Nop.Plugin.Payments.Payrexx
         }
 
         /// <summary>
-        /// Gets a view component for displaying plugin in public store ("payment info" checkout step)
+        /// Gets a name of a view component for displaying plugin in public store ("payment info" checkout step)
         /// </summary>
-        /// <param name="viewComponentName">View component name</param>
+        /// <returns>View component name</returns>
         public string GetPublicViewComponentName()
         {
             return null;
@@ -289,13 +329,15 @@ namespace Nop.Plugin.Payments.Payrexx
         /// <summary>
         /// Install the plugin
         /// </summary>
-        public override void Install()
+        /// <returns>A task that represents the asynchronous operation</returns>
+        public override async Task InstallAsync()
         {
-            //settings
-            _settingService.SaveSetting(new PayrexxSettings());
+            await _settingService.SaveSettingAsync(new PayrexxSettings
+            {
+                RequestTimeout = 10
+            });
 
-            //locales
-            _localizationService.AddPluginLocaleResource(new Dictionary<string, string>
+            await _localizationService.AddLocaleResourceAsync(new Dictionary<string, string>
             {
                 ["Plugins.Payments.Payrexx.Fields.InstanceName"] = "Instance name",
                 ["Plugins.Payments.Payrexx.Fields.InstanceName.Hint"] = "Enter your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example.",
@@ -304,21 +346,27 @@ namespace Nop.Plugin.Payments.Payrexx
                 ["Plugins.Payments.Payrexx.PaymentMethodDescription"] = "You will be redirected to Payrexx site to complete the payment"
             });
 
-            base.Install();
+            await base.InstallAsync();
         }
 
         /// <summary>
         /// Uninstall the plugin
         /// </summary>
-        public override void Uninstall()
+        /// <returns>A task that represents the asynchronous operation</returns>
+        public override async Task UninstallAsync()
         {
-            //settings
-            _settingService.DeleteSetting<PayrexxSettings>();
+            await _settingService.DeleteSettingAsync<PayrexxSettings>();
+            await _localizationService.DeleteLocaleResourcesAsync("Plugins.Payments.Payrexx");
+            await base.UninstallAsync();
+        }
 
-            //locales
-            _localizationService.DeletePluginLocaleResources("Plugins.Payments.Payrexx");
-
-            base.Uninstall();
+        /// <summary>
+        /// Gets a payment method description that will be displayed on checkout pages in the public store
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation</returns>
+        public async Task<string> GetPaymentMethodDescriptionAsync()
+        {
+            return await _localizationService.GetResourceAsync("Plugins.Payments.Payrexx.PaymentMethodDescription");
         }
 
         #endregion
@@ -359,11 +407,6 @@ namespace Nop.Plugin.Payments.Payrexx
         /// Gets a value indicating whether we should display a payment information page for this plugin
         /// </summary>
         public bool SkipPaymentInfo => true;
-
-        /// <summary>
-        /// Gets a payment method description that will be displayed on checkout pages in the public store
-        /// </summary>
-        public string PaymentMethodDescription => _localizationService.GetResource("Plugins.Payments.Payrexx.PaymentMethodDescription");
 
         #endregion
     }

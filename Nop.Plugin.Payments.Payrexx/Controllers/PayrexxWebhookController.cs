@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Plugin.Payments.Payrexx.Services;
-using Nop.Web.Framework.Controllers;
 
 namespace Nop.Plugin.Payments.Payrexx.Controllers
 {
-    public class PayrexxWebhookController : BasePaymentController
+    public class PayrexxWebhookController : Controller
     {
         #region Fields
 
@@ -24,9 +24,9 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
         #region Methods
 
         [HttpPost]
-        public IActionResult WebhookHandler()
+        public async Task<IActionResult> WebhookHandler()
         {
-            _payrexxManager.HandleWebhookTransaction(HttpContext);
+            await _payrexxManager.HandleWebhookTransactionAsync(HttpContext);
             return Ok();
         }
 

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Nop.Core;
 using Nop.Plugin.Payments.Payrexx.Models;
 using Nop.Plugin.Payments.Payrexx.Services;
 using Nop.Services.Configuration;
@@ -24,6 +26,7 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
         private readonly INotificationService _notificationService;
         private readonly IPermissionService _permissionService;
         private readonly ISettingService _settingService;
+        private readonly IWebHelper _webHelper;
         private readonly PayrexxManager _payrexxManager;
         private readonly PayrexxSettings _payrexxSettings;
 
@@ -35,6 +38,7 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
             INotificationService notificationService,
             IPermissionService permissionService,
             ISettingService settingService,
+            IWebHelper webHelper,
             PayrexxManager payrexxManager,
             PayrexxSettings payrexxSettings)
         {
@@ -42,6 +46,7 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
             _notificationService = notificationService;
             _permissionService = permissionService;
             _settingService = settingService;
+            _webHelper = webHelper;
             _payrexxManager = payrexxManager;
             _payrexxSettings = payrexxSettings;
         }
@@ -50,9 +55,9 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
 
         #region Methods
 
-        public IActionResult Configure()
+        public async Task<IActionResult> Configure()
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
                 return AccessDeniedView();
 
             var model = new ConfigurationModel
@@ -61,26 +66,28 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
                 SecretKey = _payrexxSettings.SecretKey
             };
 
+            model.WebhookUrl = Url.RouteUrl(PayrexxDefaults.WebhookRouteName, null, _webHelper.GetCurrentRequestProtocol());
+
             return View("~/Plugins/Payments.Payrexx/Views/Configure.cshtml", model);
         }
 
         [HttpPost]
-        public IActionResult Configure(ConfigurationModel model)
+        public async Task<IActionResult> Configure(ConfigurationModel model)
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
                 return AccessDeniedView();
 
             if (!ModelState.IsValid)
-                return Configure();
+                return await Configure();
 
             _payrexxSettings.InstanceName = model.InstanceName;
             _payrexxSettings.SecretKey = model.SecretKey;
-            _settingService.SaveSetting(_payrexxSettings);
+            await _settingService.SaveSettingAsync(_payrexxSettings);
 
-            _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
+            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
             //validate credentials
-            var (credentialsValid, error) = _payrexxManager.CheckSignature();
+            var (credentialsValid, error) = await _payrexxManager.CheckSignatureAsync();
             if (credentialsValid)
                 _notificationService.SuccessNotification("Credentials entered are valid");
             else if (string.IsNullOrEmpty(error))
@@ -88,7 +95,7 @@ namespace Nop.Plugin.Payments.Payrexx.Controllers
             else
                 _notificationService.ErrorNotification(error);
 
-            return Configure();
+            return await Configure();
         }
 
         #endregion

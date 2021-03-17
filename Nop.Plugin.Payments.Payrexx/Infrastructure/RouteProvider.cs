@@ -16,10 +16,12 @@ namespace Nop.Plugin.Payments.Payrexx.Infrastructure
         /// <param name="endpointRouteBuilder">Route builder</param>
         public void RegisterRoutes(IEndpointRouteBuilder endpointRouteBuilder)
         {
-            endpointRouteBuilder.MapControllerRoute(PayrexxDefaults.ConfigurationRouteName, "Plugins/Payrexx/Configure",
+            endpointRouteBuilder.MapControllerRoute(PayrexxDefaults.ConfigurationRouteName,
+                "Plugins/Payrexx/Configure",
                 new { controller = "Payrexx", action = "Configure", area = AreaNames.Admin });
 
-            endpointRouteBuilder.MapControllerRoute(PayrexxDefaults.WebhookRouteName, "Plugins/Payrexx/Webhook",
+            endpointRouteBuilder.MapControllerRoute(PayrexxDefaults.WebhookRouteName,
+                "Plugins/Payrexx/Webhook",
                 new { controller = "PayrexxWebhook", action = "WebhookHandler" });
         }
 

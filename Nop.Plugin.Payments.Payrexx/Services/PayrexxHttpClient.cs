@@ -33,7 +33,7 @@ namespace Nop.Plugin.Payments.Payrexx.Services
         {
             //configure client
             httpClient.BaseAddress = new Uri(PayrexxDefaults.ApiServiceUrl);
-            httpClient.Timeout = TimeSpan.FromSeconds(20);
+            httpClient.Timeout = TimeSpan.FromSeconds(payrexxSettings.RequestTimeout ?? 10);
             httpClient.DefaultRequestHeaders.Add(HeaderNames.UserAgent, PayrexxDefaults.UserAgent);
             httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, MimeTypes.ApplicationJson);
 
