@@ -337,7 +337,7 @@ namespace Nop.Plugin.Payments.Payrexx
                 RequestTimeout = 10
             });
 
-            await _localizationService.AddLocaleResourceAsync(new Dictionary<string, string>
+            await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
             {
                 ["Plugins.Payments.Payrexx.Fields.InstanceName"] = "Instance name",
                 ["Plugins.Payments.Payrexx.Fields.InstanceName.Hint"] = "Enter your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example.",

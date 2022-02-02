@@ -20,6 +20,7 @@ namespace Nop.Plugin.Payments.Payrexx.Infrastructure
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddHttpClient<PayrexxHttpClient>().WithProxy();
+            services.AddScoped<PayrexxManager>();
         }
 
         /// <summary>
