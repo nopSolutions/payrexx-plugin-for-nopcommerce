@@ -1,20 +1,19 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace Nop.Plugin.Payments.Payrexx.Domain
+namespace Nop.Plugin.Payments.Payrexx.Domain;
+
+/// <summary>
+/// Represents request to check signature
+/// </summary>
+public class SignatureRequest : Request
 {
     /// <summary>
-    /// Represents request to check signature
+    /// Get a request path
     /// </summary>
-    public class SignatureRequest : Request
-    {
-        /// <summary>
-        /// Get a request path
-        /// </summary>
-        public override string Path => "SignatureCheck/";
+    public override string Path => "SignatureCheck/";
 
-        /// <summary>
-        /// Get a request method
-        /// </summary>
-        public override string Method => HttpMethods.Get;
-    }
+    /// <summary>
+    /// Get a request method
+    /// </summary>
+    public override string Method => HttpMethods.Get;
 }

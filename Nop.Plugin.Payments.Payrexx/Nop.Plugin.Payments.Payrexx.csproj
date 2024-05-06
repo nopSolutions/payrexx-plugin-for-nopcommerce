@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Copyright>Copyright © Nop Solutions, Ltd</Copyright>
     <Company>Nop Solutions, Ltd</Company>
     <Authors>Nop Solutions, Ltd</Authors>
-    <PackageLicenseUrl>https://github.com/nopSolutions/payrexx-plugin-for-nopcommerce/blob/nopCommerce-4.40/LICENSE.md</PackageLicenseUrl>
+    <PackageLicenseUrl>https://github.com/nopSolutions/payrexx-plugin-for-nopcommerce/blob/nopCommerce-4.70/LICENSE.md</PackageLicenseUrl>
     <PackageProjectUrl>https://www.nopcommerce.com/payrexx-payment-gateway</PackageProjectUrl>
     <RepositoryUrl>https://github.com/nopSolutions/payrexx-plugin-for-nopcommerce</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
@@ -15,6 +15,7 @@
     You need to set this parameter to true if your plugin has a nuget package 
     to ensure that the dlls copied from the NuGet cache to the output of your project-->
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>

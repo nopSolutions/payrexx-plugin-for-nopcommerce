@@ -1,22 +1,21 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Nop.Plugin.Payments.Payrexx.Domain
+namespace Nop.Plugin.Payments.Payrexx.Domain;
+
+/// <summary>
+/// Represents response status enumeration
+/// </summary>
+public enum ResponseStatus
 {
     /// <summary>
-    /// Represents response status enumeration
+    /// Request was successful
     /// </summary>
-    public enum ResponseStatus
-    {
-        /// <summary>
-        /// Request was successful
-        /// </summary>
-        [EnumMember(Value = "success")]
-        Success,
+    [EnumMember(Value = "success")]
+    Success,
 
-        /// <summary>
-        /// Request failed
-        /// </summary>
-        [EnumMember(Value = "error")]
-        Error
-    }
+    /// <summary>
+    /// Request failed
+    /// </summary>
+    [EnumMember(Value = "error")]
+    Error
 }

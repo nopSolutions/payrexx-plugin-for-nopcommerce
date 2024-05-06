@@ -1,16 +1,15 @@
 ﻿using Newtonsoft.Json;
 
-namespace Nop.Plugin.Payments.Payrexx.Domain
+namespace Nop.Plugin.Payments.Payrexx.Domain;
+
+/// <summary>
+/// Represents the webhook details
+/// </summary>
+public class Webhook
 {
     /// <summary>
-    /// Represents the webhook details
+    /// Gets or sets the transaction details
     /// </summary>
-    public class Webhook
-    {
-        /// <summary>
-        /// Gets or sets the transaction details
-        /// </summary>
-        [JsonProperty(PropertyName = "transaction")]
-        public Transaction Transaction { get; set; }
-    }
+    [JsonProperty(PropertyName = "transaction")]
+    public Transaction Transaction { get; set; }
 }
