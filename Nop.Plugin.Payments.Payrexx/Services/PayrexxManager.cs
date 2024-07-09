@@ -168,6 +168,21 @@ public class PayrexxManager
     }
 
     /// <summary>
+    /// Refund transaction
+    /// </summary>
+    /// <param name="transactionId">Transaction identifier</param>
+    /// <param name="amountToRefund">Amount to refund</param>
+    /// <returns>The asynchronous task whose result contains transaction; error message if exists</returns>
+    public async Task<(Transaction Transaction, string ErrorMessage)> RefundTransactionAsync(string transactionId, int? amountToRefund)
+    {
+        return await HandleFunctionAsync(async () =>
+        {
+            var request = new RefundTransactionRequest { Id = transactionId, AmountToRefund = amountToRefund };
+            return await HandleRequestAsync<RefundTransactionRequest, Transaction>(request);
+        });
+    }
+
+    /// <summary>
     /// Handle webhook transaction
     /// </summary>
     /// <param name="context">HTTP context</param>
@@ -222,8 +237,7 @@ public class PayrexxManager
                 case InvoiceStatus.Confirmed:
                     if (gateway.TotalAmount == Math.Round(order.OrderTotal, 2) * 100 && _orderProcessingService.CanMarkOrderAsPaid(order))
                     {
-                        order.CaptureTransactionId = gateway.Id;
-                        await _orderService.UpdateOrderAsync(order);
+                        order.CaptureTransactionId = transaction.Id;
                         await _orderProcessingService.MarkOrderAsPaidAsync(order);
                     }
                     break;
@@ -232,26 +246,26 @@ public class PayrexxManager
                 case InvoiceStatus.Reserved:
                     if (gateway.TotalAmount == Math.Round(order.OrderTotal, 2) * 100 && _orderProcessingService.CanMarkOrderAsAuthorized(order))
                     {
-                        order.AuthorizationTransactionId = gateway.Id;
-                        await _orderService.UpdateOrderAsync(order);
+                        order.AuthorizationTransactionId = transaction.Id;
                         await _orderProcessingService.MarkAsAuthorizedAsync(order);
                     }
                     break;
 
                 case InvoiceStatus.Refunded:
-                    if (await _orderProcessingService.CanRefundAsync(order))
-                        await _orderProcessingService.RefundAsync(order);
+                    if (_orderProcessingService.CanRefundOffline(order))
+                        await _orderProcessingService.RefundOfflineAsync(order);
                     break;
 
                 case InvoiceStatus.PartiallyRefunded:
-                    var amountToRefund = gateway.TotalAmount ?? decimal.Zero;
-                    if (await _orderProcessingService.CanPartiallyRefundAsync(order, amountToRefund))
-                        await _orderProcessingService.PartiallyRefundAsync(order, amountToRefund);
+                    var amountToRefund = gateway.RefundedAmount ?? decimal.Zero;
+                    if (_orderProcessingService.CanPartiallyRefundOffline(order, amountToRefund))
+                        await _orderProcessingService.PartiallyRefundOfflineAsync(order, amountToRefund);
                     break;
 
                 case InvoiceStatus.Cancelled:
                 case InvoiceStatus.Declined:
                 case InvoiceStatus.Chargeback:
+                case InvoiceStatus.Expired:
                     if (_orderProcessingService.CanCancelOrder(order))
                         await _orderProcessingService.CancelOrderAsync(order, true);
                     break;

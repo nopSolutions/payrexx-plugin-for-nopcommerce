@@ -65,5 +65,11 @@ public enum InvoiceStatus
     /// Error is occurred
     /// </summary>
     [EnumMember(Value = "error")]
-    Error
+    Error,
+
+    /// <summary>
+    /// Expired
+    /// </summary>
+    [EnumMember(Value = "expired")]
+    Expired
 }

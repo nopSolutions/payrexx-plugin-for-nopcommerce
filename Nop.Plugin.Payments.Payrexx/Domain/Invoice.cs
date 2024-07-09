@@ -85,6 +85,12 @@ public class Invoice : ResponseData
     public decimal? TotalAmount { get; set; }
 
     /// <summary>
+    /// Gets or sets the total amount (in cents) refunded at the time of the webhook
+    /// </summary>
+    [JsonProperty(PropertyName = "refundedAmount")]
+    public decimal? RefundedAmount { get; set; }
+
+    /// <summary>
     /// Gets or sets the tax VAT rate percentage
     /// </summary>
     [JsonProperty(PropertyName = "vatRate")]

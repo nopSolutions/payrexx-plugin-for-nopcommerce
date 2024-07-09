@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Payments;
 using Nop.Plugin.Payments.Payrexx.Domain;
 using Nop.Plugin.Payments.Payrexx.Services;
 using Nop.Services.Common;
@@ -193,9 +194,27 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
     /// A task that represents the asynchronous operation
     /// The task result contains the result
     /// </returns>
-    public Task<RefundPaymentResult> RefundAsync(RefundPaymentRequest refundPaymentRequest)
+    public async Task<RefundPaymentResult> RefundAsync(RefundPaymentRequest refundPaymentRequest)
     {
-        return Task.FromResult(new RefundPaymentResult { Errors = new[] { "Refund method not supported" } });
+        var amount = refundPaymentRequest.AmountToRefund != refundPaymentRequest.Order.OrderTotal
+            ? (int?)(Math.Round(refundPaymentRequest.AmountToRefund, 2) * 100)
+            : null;
+
+        var (transaction, error) = await _payrexxManager.RefundTransactionAsync(refundPaymentRequest.Order.CaptureTransactionId, amount);
+
+        if (!string.IsNullOrEmpty(error))
+            return new RefundPaymentResult { Errors = new[] { error } };
+
+        var newStatus = transaction?.Status switch
+        {
+            InvoiceStatus.PartiallyRefunded => PaymentStatus.PartiallyRefunded,
+            InvoiceStatus.Refunded => PaymentStatus.Refunded,
+            _ => refundPaymentRequest.Order.PaymentStatus
+        };
+        return new RefundPaymentResult
+        {
+            NewPaymentStatus = newStatus
+        };
     }
 
     /// <summary>
@@ -376,12 +395,12 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
     /// <summary>
     /// Gets a value indicating whether partial refund is supported
     /// </summary>
-    public bool SupportPartiallyRefund => false;
+    public bool SupportPartiallyRefund => true;
 
     /// <summary>
     /// Gets a value indicating whether refund is supported
     /// </summary>
-    public bool SupportRefund => false;
+    public bool SupportRefund => true;
 
     /// <summary>
     /// Gets a value indicating whether void is supported
