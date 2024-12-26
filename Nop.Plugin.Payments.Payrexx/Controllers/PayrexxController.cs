@@ -23,7 +23,6 @@ public class PayrexxController : BasePaymentController
 
     private readonly ILocalizationService _localizationService;
     private readonly INotificationService _notificationService;
-    private readonly IPermissionService _permissionService;
     private readonly ISettingService _settingService;
     private readonly IWebHelper _webHelper;
     private readonly PayrexxManager _payrexxManager;
@@ -35,7 +34,6 @@ public class PayrexxController : BasePaymentController
 
     public PayrexxController(ILocalizationService localizationService,
         INotificationService notificationService,
-        IPermissionService permissionService,
         ISettingService settingService,
         IWebHelper webHelper,
         PayrexxManager payrexxManager,
@@ -43,7 +41,6 @@ public class PayrexxController : BasePaymentController
     {
         _localizationService = localizationService;
         _notificationService = notificationService;
-        _permissionService = permissionService;
         _settingService = settingService;
         _webHelper = webHelper;
         _payrexxManager = payrexxManager;
@@ -54,28 +51,23 @@ public class PayrexxController : BasePaymentController
 
     #region Methods
 
+    [CheckPermission(StandardPermission.Configuration.MANAGE_PAYMENT_METHODS)]
     public async Task<IActionResult> Configure()
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
-            return AccessDeniedView();
-
         var model = new ConfigurationModel
         {
             InstanceName = _payrexxSettings.InstanceName,
-            SecretKey = _payrexxSettings.SecretKey
+            SecretKey = _payrexxSettings.SecretKey,
+            WebhookUrl = Url.RouteUrl(PayrexxDefaults.WebhookRouteName, null, _webHelper.GetCurrentRequestProtocol())
         };
-
-        model.WebhookUrl = Url.RouteUrl(PayrexxDefaults.WebhookRouteName, null, _webHelper.GetCurrentRequestProtocol());
 
         return View("~/Plugins/Payments.Payrexx/Views/Configure.cshtml", model);
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_PAYMENT_METHODS)]
     public async Task<IActionResult> Configure(ConfigurationModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
-            return AccessDeniedView();
-
         if (!ModelState.IsValid)
             return await Configure();
 
