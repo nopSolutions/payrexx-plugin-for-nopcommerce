@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
+using Nop.Core.Http;
 using Nop.Plugin.Payments.Payrexx.Domain;
 using Nop.Plugin.Payments.Payrexx.Services;
 using Nop.Services.Common;
@@ -14,6 +12,7 @@ using Nop.Services.Directory;
 using Nop.Services.Localization;
 using Nop.Services.Payments;
 using Nop.Services.Plugins;
+using Nop.Web.Framework.Mvc.Routing;
 
 namespace Nop.Plugin.Payments.Payrexx;
 
@@ -25,15 +24,15 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
     #region Fields
 
     private readonly CurrencySettings _currencySettings;
-    private readonly IActionContextAccessor _actionContextAccessor;
     private readonly IAddressService _addressService;
     private readonly ICountryService _countryService;
     private readonly ICurrencyService _currencyService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IGenericAttributeService _genericAttributeService;
     private readonly ILocalizationService _localizationService;
+    private readonly INopUrlHelper _nopUrlHelper;
     private readonly ISettingService _settingService;
     private readonly IStoreContext _storeContext;
-    private readonly IUrlHelperFactory _urlHelperFactory;
     private readonly IWebHelper _webHelper;
     private readonly PayrexxManager _payrexxManager;
 
@@ -42,28 +41,28 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
     #region Ctor
 
     public PayrexxProcessor(CurrencySettings currencySettings,
-        IActionContextAccessor actionContextAccessor,
         IAddressService addressService,
         ICountryService countryService,
         ICurrencyService currencyService,
+        IHttpContextAccessor httpContextAccessor,
         IGenericAttributeService genericAttributeService,
         ILocalizationService localizationService,
+        INopUrlHelper nopUrlHelper,
         ISettingService settingService,
         IStoreContext storeContext,
-        IUrlHelperFactory urlHelperFactory,
         IWebHelper webHelper,
         PayrexxManager payrexxManager)
     {
         _currencySettings = currencySettings;
-        _actionContextAccessor = actionContextAccessor;
         _addressService = addressService;
         _countryService = countryService;
         _currencyService = currencyService;
+        _httpContextAccessor = httpContextAccessor;
         _genericAttributeService = genericAttributeService;
         _localizationService = localizationService;
+        _nopUrlHelper = nopUrlHelper;
         _settingService = settingService;
         _storeContext = storeContext;
-        _urlHelperFactory = urlHelperFactory;
         _webHelper = webHelper;
         _payrexxManager = payrexxManager;
     }
@@ -93,11 +92,8 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
     public async Task PostProcessPaymentAsync(PostProcessPaymentRequest postProcessPaymentRequest)
     {
         //prepare URLs
-        var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
-        var successUrl = urlHelper
-            .RouteUrl("CheckoutCompleted", new { orderId = postProcessPaymentRequest.Order.Id }, _webHelper.GetCurrentRequestProtocol());
-        var failUrl = urlHelper
-            .RouteUrl("OrderDetails", new { orderId = postProcessPaymentRequest.Order.Id }, _webHelper.GetCurrentRequestProtocol());
+        var successUrl = _nopUrlHelper.RouteUrl(NopRouteNames.Standard.CHECKOUT_COMPLETED, new { orderId = postProcessPaymentRequest.Order.Id }, _webHelper.GetCurrentRequestProtocol());
+        var failUrl = _nopUrlHelper.RouteUrl(NopRouteNames.Standard.ORDER_DETAILS, new { orderId = postProcessPaymentRequest.Order.Id }, _webHelper.GetCurrentRequestProtocol());
 
         //try to get previosly created invoice for this order
         var invoiceId = await _genericAttributeService
@@ -111,11 +107,11 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
             {
                 if (invoice.PaymentLink != null && invoice.Status == InvoiceStatus.Pending)
                 {
-                    _actionContextAccessor.ActionContext.HttpContext.Response.Redirect(invoice.PaymentLink);
+                    _httpContextAccessor?.HttpContext.Response.Redirect(invoice.PaymentLink);
                     return;
                 }
 
-                _actionContextAccessor.ActionContext.HttpContext.Response.Redirect(failUrl);
+                _httpContextAccessor?.HttpContext.Response.Redirect(failUrl);
                 return;
             }
         }
@@ -162,7 +158,7 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
         var (gateway, errorMessage) = await _payrexxManager.CreateGatewayAsync(request);
         if (gateway?.PaymentLink == null || !string.IsNullOrEmpty(errorMessage))
         {
-            _actionContextAccessor.ActionContext.HttpContext.Response.Redirect(failUrl);
+            _httpContextAccessor?.HttpContext.Response.Redirect(failUrl);
             return;
         }
 
@@ -170,7 +166,7 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
         await _genericAttributeService.SaveAttributeAsync(postProcessPaymentRequest.Order, PayrexxDefaults.InvoiceIdAttribute, gateway.Id);
 
         //redirect to payment link
-        _actionContextAccessor.ActionContext.HttpContext.Response.Redirect(gateway.PaymentLink);
+        _httpContextAccessor?.HttpContext.Response.Redirect(gateway.PaymentLink);
     }
 
     /// <summary>
@@ -328,7 +324,7 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
     /// </summary>
     public override string GetConfigurationPageUrl()
     {
-        return _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext).RouteUrl(PayrexxDefaults.ConfigurationRouteName);
+        return _nopUrlHelper.RouteUrl(PayrexxDefaults.ConfigurationRouteName);
     }
 
     /// <summary>
