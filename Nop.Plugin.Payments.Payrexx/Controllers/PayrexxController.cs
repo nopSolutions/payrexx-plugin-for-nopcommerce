@@ -3,6 +3,7 @@ using Nop.Core;
 using Nop.Plugin.Payments.Payrexx.Models;
 using Nop.Plugin.Payments.Payrexx.Services;
 using Nop.Services.Configuration;
+using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Security;
