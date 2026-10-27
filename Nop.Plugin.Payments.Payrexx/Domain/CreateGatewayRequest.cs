@@ -99,10 +99,16 @@ public class CreateGatewayRequest : Request
     /// <summary>
     /// Get a request path
     /// </summary>
-    public override string Path => $"Gateway/";
+    public override string Path => "Gateway/";
 
     /// <summary>
     /// Get a request method
     /// </summary>
     public override string Method => HttpMethods.Post;
+
+    /// <summary>
+    /// Gateway validity in minutes
+    /// </summary>
+    [JsonProperty(PropertyName = "validity")]
+    public int Validity { get; set; }
 }

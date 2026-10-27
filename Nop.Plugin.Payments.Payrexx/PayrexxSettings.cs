@@ -21,4 +21,9 @@ public class PayrexxSettings : ISettings
     /// Gets or sets a period (in seconds) before the request times out
     /// </summary>
     public int? RequestTimeout { get; set; }
+
+    /// <summary>
+    /// Gateway validity in minutes
+    /// </summary>
+    public int? Validity { get; set; }
 }

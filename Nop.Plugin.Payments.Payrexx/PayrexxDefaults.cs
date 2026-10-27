@@ -46,4 +46,9 @@ public class PayrexxDefaults
     /// Gets the name of a generic attribute to store invoice identifier
     /// </summary>
     public static string InvoiceIdAttribute => "PayrexxInvoiceId";
+
+    /// <summary>
+    /// Gateway validity in minutes
+    /// </summary>
+    public static int Validity => 30;
 }

@@ -19,4 +19,8 @@ public record ConfigurationModel : BaseNopModel
     public string SecretKey { get; set; }
 
     public string WebhookUrl { get; set; }
+
+    [NopResourceDisplayName("Plugins.Payments.Payrexx.Fields.Validity")]
+    [UIHint("Int32Nullable")]
+    public int? Validity { get; set; }
 }

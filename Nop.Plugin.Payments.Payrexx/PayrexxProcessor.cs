@@ -36,6 +36,7 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
     private readonly IStoreContext _storeContext;
     private readonly IWebHelper _webHelper;
     private readonly PayrexxManager _payrexxManager;
+    private readonly PayrexxSettings _payrexxSettings;
 
     #endregion
 
@@ -52,7 +53,8 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
         ISettingService settingService,
         IStoreContext storeContext,
         IWebHelper webHelper,
-        PayrexxManager payrexxManager)
+        PayrexxManager payrexxManager,
+        PayrexxSettings payrexxSettings)
     {
         _currencySettings = currencySettings;
         _addressService = addressService;
@@ -66,6 +68,7 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
         _storeContext = storeContext;
         _webHelper = webHelper;
         _payrexxManager = payrexxManager;
+        _payrexxSettings = payrexxSettings;
     }
 
     #endregion
@@ -142,17 +145,18 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
             Reserved = false,
             ReferenceId = postProcessPaymentRequest.Order.CustomOrderNumber,
             SkipResultPage = true,
-            AdditionalFields = billingAddress == null ? null : new List<(string Name, string Value)>
-            {
-                { ("forename", billingAddress.FirstName) },
-                { ("surname", billingAddress.LastName) },
-                { ("phone", new string(billingAddress.PhoneNumber?.Where(c => char.IsDigit(c)).ToArray())) },
-                { ("email", billingAddress.Email) },
-                { ("street", billingAddress.Address1) },
-                { ("place", billingAddress.City) },
-                { ("country", country?.TwoLetterIsoCode) },
-                { ("postcode", billingAddress.ZipPostalCode) }
-            }
+            AdditionalFields = billingAddress == null ? null :
+            [
+                ("forename", billingAddress.FirstName),
+                ("surname", billingAddress.LastName),
+                ("phone", new string(billingAddress.PhoneNumber?.Where(c => char.IsDigit(c)).ToArray())),
+                ("email", billingAddress.Email),
+                ("street", billingAddress.Address1),
+                ("place", billingAddress.City),
+                ("country", country?.TwoLetterIsoCode),
+                ("postcode", billingAddress.ZipPostalCode)
+            ],
+            Validity = _payrexxSettings.Validity ?? PayrexxDefaults.Validity
         };
 
         //create gateway
@@ -354,7 +358,9 @@ public class PayrexxProcessor : BasePlugin, IPaymentMethod
             ["Plugins.Payments.Payrexx.Fields.InstanceName.Hint"] = "Enter your Payrexx instance name. If you access your Payrexx payment page with example.payrexx.com, the name would be example.",
             ["Plugins.Payments.Payrexx.Fields.SecretKey"] = "API secret key",
             ["Plugins.Payments.Payrexx.Fields.SecretKey.Hint"] = "Enter your Payrexx API secret key.",
-            ["Plugins.Payments.Payrexx.PaymentMethodDescription"] = "You will be redirected to Payrexx site to complete the payment"
+            ["Plugins.Payments.Payrexx.PaymentMethodDescription"] = "You will be redirected to Payrexx site to complete the payment",
+            ["Plugins.Payments.Payrexx.Fields.Validity"] = "Validity (in minutes)",
+            ["Plugins.Payments.Payrexx.Fields.Validity.Hint"] = "Enter the value for how long should your payment gateway be available. Leave empty to use default value (30 minutes)."
         });
 
         await base.InstallAsync();

@@ -40,6 +40,15 @@
                     </div>
                 </div>
                 <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="Validity" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="Validity"/>
+                        <span asp-validation-for="Validity"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
                     <div class="col-md-9 offset-md-3">
                         <input type="submit" name="save" class="btn btn-primary" value="@T("Admin.Common.Save")" />
                     </div>
